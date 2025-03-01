@@ -2,6 +2,7 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Moq;
 using Stargate.Server.Business.Commands;
 using Stargate.Server.Business.Queries;
@@ -25,15 +26,12 @@ public class CreatePersonTests
         // Arrange
         var services = new ServiceCollection();
 
-        var mockedPersonRepo = new Mock<IPersonRepository>();        
-
-        //var mockedValidator = new Mock<IValidator<CreatePerson>>();
+        var mockedPersonRepo = new Mock<IPersonRepository>();                
 
         var serviceProvider = services
-            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(GetPersonByNameHandler).Assembly))
+            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly))
             .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
-            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
-            //.AddScoped(x => mockedValidator)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()            
             .BuildServiceProvider();
 
         var mediator = serviceProvider.GetRequiredService<IMediator>();
@@ -54,15 +52,12 @@ public class CreatePersonTests
         var services = new ServiceCollection();
        
         var mockedPersonRepo = new Mock<IPersonRepository>();
-        mockedPersonRepo.Setup(x => x.CreateAsync(It.IsAny<Person>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
-
-        //var mockedValidator = new Mock<IValidator<CreatePerson>>();
+        mockedPersonRepo.Setup(x => x.CreateAsync(It.IsAny<Person>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));        
 
         var serviceProvider = services
-            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(GetPersonByNameHandler).Assembly))
+            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly))
             .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
-            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
-            //.AddScoped(x => mockedValidator)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()            
             .BuildServiceProvider();
 
         var mediator = serviceProvider.GetRequiredService<IMediator>();
@@ -86,15 +81,12 @@ public class CreatePersonTests
         var services = new ServiceCollection();
 
         var mockedPersonRepo = new Mock<IPersonRepository>();
-        mockedPersonRepo.Setup(x => x.CreateAsync(It.IsAny<Person>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
-
-        //var mockedValidator = new Mock<IValidator<CreatePerson>>();
+        mockedPersonRepo.Setup(x => x.CreateAsync(It.IsAny<Person>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));        
 
         var serviceProvider = services
-            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(GetPersonByNameHandler).Assembly))
+            .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly))
             .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
-            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
-            //.AddScoped(x => mockedValidator)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()            
             .BuildServiceProvider();
 
         var mediator = serviceProvider.GetRequiredService<IMediator>();
@@ -109,5 +101,165 @@ public class CreatePersonTests
         response.Success.Should().BeFalse();
         response.ResponseCode.Should().Be((int)HttpStatusCode.InternalServerError);
         response.Message.Should().Be("Error occured when attempting to save person in system..");
+    }
+
+    [Fact]
+    public async Task CreatePerson_ShouldCallExistsByName_Once()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+        var mockedPersonRepo = new Mock<IPersonRepository>();        
+
+        var serviceProvider = services
+            .AddMediatR(cfg =>
+            {
+                cfg.AddRequestPreProcessor<CreatePersonPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+
+        var request = new CreatePerson() { Name = name };
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+
+        // Assert
+        mockedPersonRepo.Verify(m => m.ExistsByNameAsync(name, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("")] // Empty String
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")] // Length > 50
+    [InlineData("Dan1 Carson2!")] // Special Charcters, numbers not allowed
+    [InlineData("Dan  Carson")] // Name should only have one space
+    public async Task CreatePerson_WithInvalidNameInRequest_ThrowsValidationException(string name)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();        
+
+        var serviceProvider = services
+            .AddMediatR(cfg =>
+            {                
+                cfg.AddRequestPreProcessor<CreatePersonPreProcessor>();                
+                cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+
+        var request = new CreatePerson() { Name = name };
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        } 
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();        
+    }
+
+    [Theory]
+    [InlineData("Dan Carson")]
+    [InlineData("Peter Pan")]
+    [InlineData("Ana Carson")]
+    [InlineData("Kylie Carson")]
+    public async Task CreatePerson_WithValidNameInRequest_DoesNotThrowValidationException_WhenUserDoesNotExist(string name)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        mockedPersonRepo.Setup(x => x.ExistsByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
+
+        var serviceProvider = services
+            .AddMediatR(cfg =>
+            {
+                cfg.AddRequestPreProcessor<CreatePersonPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+
+        var request = new CreatePerson() { Name = name };
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+
+        // Assert
+        validationException.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreatePerson_WithValidNameInRequest_ThrowsValidationException_WhenUserExists()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        mockedPersonRepo.Setup(x => x.ExistsByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+
+        var serviceProvider = services
+            .AddMediatR(cfg =>
+            {
+                cfg.AddRequestPreProcessor<CreatePersonPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreatePersonHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreatePersonValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+
+        var request = new CreatePerson() { Name = name };
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
     }
 }
