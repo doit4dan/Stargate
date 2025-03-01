@@ -1,9 +1,8 @@
 ﻿using MediatR.Pipeline;
 using MediatR;
 using Stargate.Server.Data.Models;
-using Stargate.Server.Data;
 using Stargate.Server.Controllers;
-using Microsoft.EntityFrameworkCore;
+using Stargate.Server.Repositories;
 
 namespace Stargate.Server.Business.Commands
 {
@@ -20,47 +19,55 @@ namespace Stargate.Server.Business.Commands
 
     public class CreateAstronautDutyPreProcessor : IRequestPreProcessor<CreateAstronautDuty>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly IAstronautRepository _astronautRepository;
 
-        public CreateAstronautDutyPreProcessor(StargateContext context)
+        public CreateAstronautDutyPreProcessor(IPersonRepository personRepository, IAstronautRepository astronautRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
+            _astronautRepository = astronautRepository;
         }
 
-        public Task Process(CreateAstronautDuty request, CancellationToken cancellationToken)
+        public async Task Process(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
+            var personId = await _personRepository.GetPersonIdByNameAsync(request.Name, cancellationToken);
 
-            if (person is null) throw new BadHttpRequestException("Bad Request");
+            if (personId <= 0) throw new BadHttpRequestException($"Person does not exist with Name: {request.Name}");
 
-            var verifyNoPreviousDuty = _context.AstronautDuties.FirstOrDefault(z => z.DutyTitle == request.DutyTitle && z.DutyStartDate == request.DutyStartDate);
+            var duties = await _astronautRepository.GetDutiesByPersonIdAsync(personId, cancellationToken);
 
-            if (verifyNoPreviousDuty is not null) throw new BadHttpRequestException("Bad Request");
+            var verifyNoPreviousDuty = duties
+                .FirstOrDefault(z => z.DutyTitle == request.DutyTitle && z.DutyStartDate == request.DutyStartDate);
 
-            return Task.CompletedTask;
+            if (verifyNoPreviousDuty is not null) throw new BadHttpRequestException("This duty record has already been recorded in the system..");            
         }
     }
 
     public class CreateAstronautDutyHandler : IRequestHandler<CreateAstronautDuty, CreateAstronautDutyResult>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly IAstronautRepository _astronautRepository;
 
-        public CreateAstronautDutyHandler(StargateContext context)
+        public CreateAstronautDutyHandler(IPersonRepository personRepository, IAstronautRepository astronautRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
+            _astronautRepository = astronautRepository;
         }
+
         public async Task<CreateAstronautDutyResult> Handle(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var person = await _context.People.FirstOrDefaultAsync(x => x.Name == request.Name, cancellationToken);
+            var personId = await _personRepository.GetPersonIdByNameAsync(request.Name, cancellationToken);
 
-            if (person is null) throw new BadHttpRequestException("Bad Request");
+            if (personId <= 0) throw new BadHttpRequestException($"Person does not exist with Name: {request.Name}");
 
-            var astronautDetail = await _context.AstronautDetails.FirstOrDefaultAsync(x => x.PersonId == person!.Id, cancellationToken);
+            var astronautDetail = await _astronautRepository.GetDetailByPersonIdAsync(personId);
+
+            var success = true;
 
             if (astronautDetail == null)
             {
                 astronautDetail = new AstronautDetail();
-                astronautDetail.PersonId = person!.Id;
+                astronautDetail.PersonId = personId;
                 astronautDetail.CurrentDutyTitle = request.DutyTitle;
                 astronautDetail.CurrentRank = request.Rank;
                 astronautDetail.CareerStartDate = request.DutyStartDate.Date;
@@ -69,8 +76,7 @@ namespace Stargate.Server.Business.Commands
                     astronautDetail.CareerEndDate = request.DutyStartDate.Date;
                 }
 
-                await _context.AstronautDetails.AddAsync(astronautDetail, cancellationToken);
-
+                success = await _astronautRepository.CreateDetailAsync(astronautDetail, cancellationToken);
             }
             else
             {
@@ -80,38 +86,28 @@ namespace Stargate.Server.Business.Commands
                 {
                     astronautDetail.CareerEndDate = request.DutyStartDate.AddDays(-1).Date;
                 }
-                _context.AstronautDetails.Update(astronautDetail);
+                success = await _astronautRepository.UpdateDetailAsync(astronautDetail, cancellationToken);
             }
 
-            // get last astronaut duty
-            var astronautDuty = await _context.AstronautDuties
-                .Where(d => d.PersonId == person!.Id)
-                .OrderByDescending(o => o.DutyStartDate)
-                .FirstOrDefaultAsync(cancellationToken); 
-
-            // set end date for previous astronaut duty
-            if (astronautDuty != null)
-            {
-                astronautDuty.DutyEndDate = request.DutyStartDate.AddDays(-1).Date;
-                _context.AstronautDuties.Update(astronautDuty);
-            }
+            if (!success) throw new BadHttpRequestException($"Failed to add/update Astronaunt Detail in the system..");
 
             var newAstronautDuty = new AstronautDuty()
             {
-                PersonId = person!.Id,
+                PersonId = personId,
                 Rank = request.Rank,
                 DutyTitle = request.DutyTitle,
                 DutyStartDate = request.DutyStartDate.Date,
                 DutyEndDate = null
             };
 
-            await _context.AstronautDuties.AddAsync(newAstronautDuty, cancellationToken);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
+            success = await _astronautRepository.CreateDutyAsync(newAstronautDuty, cancellationToken);
+            
             return new CreateAstronautDutyResult()
             {
-                Id = newAstronautDuty.Id
+                Id = newAstronautDuty.Id,
+                Success = success,
+                Message = success ? "Successfully recorded Astronaut Duty Details in system" :
+                                    "Failed to record Astronaut Duty Details in system..."
             };
         }
     }
