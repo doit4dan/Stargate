@@ -1,8 +1,7 @@
 ﻿using MediatR;
 using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
-using Stargate.Server.Data;
-using Microsoft.EntityFrameworkCore;
+using Stargate.Server.Repositories;
 
 namespace Stargate.Server.Business.Queries
 {
@@ -13,28 +12,24 @@ namespace Stargate.Server.Business.Queries
 
     public class GetAstronautDutiesByNameHandler : IRequestHandler<GetAstronautDutiesByName, GetAstronautDutiesByNameResult>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly IAstronautRepository _astronautRepository;
 
-        public GetAstronautDutiesByNameHandler(StargateContext context)
+        public GetAstronautDutiesByNameHandler(IPersonRepository personRepository, IAstronautRepository astronautRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
+            _astronautRepository = astronautRepository;
         }
 
         public async Task<GetAstronautDutiesByNameResult> Handle(GetAstronautDutiesByName request, CancellationToken cancellationToken)
         {
             var result = new GetAstronautDutiesByNameResult();
 
-            var person = await _context.PersonAstronauts
-                .FromSql($"""
-                    SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate 
-                    FROM [Person] a 
-                    LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id 
-                    WHERE a.Name = {request.Name}
-                """).FirstOrDefaultAsync(cancellationToken);
+            var person = await _personRepository.GetByNameAsync(request.Name, cancellationToken);
 
             if (person is null)
             {
-                result.Message = $"Person not found with name {request.Name}";
+                result.Message = $"Person not found with name: {request.Name}";
                 result.ResponseCode = 404;
                 result.Success = false;
                 return result;
@@ -42,14 +37,9 @@ namespace Stargate.Server.Business.Queries
 
             result.Person = person;
 
-            var duties = await _context.AstronautDuties
-                .FromSql($"""
-                    SELECT * FROM [AstronautDuty] 
-                    WHERE PersonId = {person.PersonId} 
-                    Order By DutyStartDate Desc
-                """).ToListAsync(cancellationToken);                
+            var duties = await _astronautRepository.GetDutiesByPersonIdAsync(person.PersonId, cancellationToken);       
 
-            result.AstronautDuties = duties;
+            result.AstronautDuties = duties.ToList();
 
             return result;
         }

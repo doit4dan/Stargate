@@ -1,8 +1,7 @@
 ﻿using MediatR;
 using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
-using Stargate.Server.Data;
-using Microsoft.EntityFrameworkCore;
+using Stargate.Server.Repositories;
 
 namespace Stargate.Server.Business.Queries
 {
@@ -13,27 +12,21 @@ namespace Stargate.Server.Business.Queries
 
     public class GetPersonByNameHandler : IRequestHandler<GetPersonByName, GetPersonByNameResult>
     {
-        private readonly StargateContext _context;
-        public GetPersonByNameHandler(StargateContext context)
+        public readonly IPersonRepository _personRepository;
+        public GetPersonByNameHandler(IPersonRepository personRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
         }
 
         public async Task<GetPersonByNameResult> Handle(GetPersonByName request, CancellationToken cancellationToken)
         {
             var result = new GetPersonByNameResult();
 
-            var person = await _context.PersonAstronauts
-                .FromSql($"""
-                    SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate 
-                    FROM [Person] a
-                    LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id 
-                    WHERE a.Name = {request.Name}
-                """).FirstOrDefaultAsync(cancellationToken);
+            var person = await _personRepository.GetByNameAsync(request.Name, cancellationToken);
             
-            if(person is null)
+            if (person is null)
             {
-                result.Message = $"Person not found with name {request.Name}";
+                result.Message = $"Person not found with name: {request.Name}";
                 result.ResponseCode = 404;
                 result.Success = false;
                 return result;

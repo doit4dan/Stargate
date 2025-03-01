@@ -1,8 +1,7 @@
 ﻿using MediatR;
 using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
-using Stargate.Server.Data;
-using Microsoft.EntityFrameworkCore;
+using Stargate.Server.Repositories;
 
 namespace Stargate.Server.Business.Queries
 {
@@ -13,25 +12,20 @@ namespace Stargate.Server.Business.Queries
 
     public class GetPeopleHandler : IRequestHandler<GetPeople, GetPeopleResult>
     {
-        public readonly StargateContext _context;
-        public GetPeopleHandler(StargateContext context)
+        public readonly IPersonRepository _personRepository;
+        
+        public GetPeopleHandler(IPersonRepository personRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
         }
+        
         public async Task<GetPeopleResult> Handle(GetPeople request, CancellationToken cancellationToken)
         {
-            var result = new GetPeopleResult();
-
-            var people = await _context.PersonAstronauts
-                .FromSql($"""
-                    SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate 
-                    FROM [Person] a 
-                    LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id
-                """).ToListAsync(cancellationToken);                
-
-            result.People = people;
-
-            return result;
+            var ppl = await _personRepository.GetAllAsync(cancellationToken);
+            return new GetPeopleResult()
+            {
+                People = ppl.ToList()
+            };                        
         }
     }
 
