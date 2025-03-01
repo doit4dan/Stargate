@@ -49,7 +49,7 @@ namespace Stargate.Server.Business.Commands
         {
             var personId = await _personRepository.GetPersonIdByNameAsync(request.Name, cancellationToken);
 
-            if (personId <= 0) throw new BadHttpRequestException($"Person does not exist with Name: {request.Name}");
+            if (personId <= 0) throw new BadHttpRequestException($"Provided Person name does not exist in system");
 
             var astronautDetail = await _astronautRepository.GetDetailByPersonIdAsync(personId);
 
