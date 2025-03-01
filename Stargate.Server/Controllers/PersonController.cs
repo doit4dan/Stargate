@@ -16,6 +16,11 @@ namespace Stargate.Server.Controllers
             _mediator = mediator;
         }
 
+        /// <summary>
+        /// Retrieves all people recorded in system
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [HttpGet("")]
         public async Task<IActionResult> GetPeople(CancellationToken cancellationToken)
         {
@@ -39,6 +44,12 @@ namespace Stargate.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a person by name
+        /// </summary>
+        /// <param name="name">Full name of existing person</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [HttpGet("{name}")]
         public async Task<IActionResult> GetPersonByName(string name, CancellationToken cancellationToken)
         {
@@ -62,6 +73,12 @@ namespace Stargate.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// Creates a new person in the system
+        /// </summary>
+        /// <param name="name">Full name of new person</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         [HttpPost("")]
         public async Task<IActionResult> CreatePerson([FromBody] string name, CancellationToken cancellationToken)
         {
