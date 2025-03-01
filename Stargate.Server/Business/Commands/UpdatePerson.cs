@@ -6,6 +6,7 @@ using Stargate.Server.Controllers;
 using Stargate.Server.Data;
 using Stargate.Server.Repositories;
 using Stargate.Server.Validators;
+using System.Net;
 
 namespace Stargate.Server.Business.Commands;
 
@@ -52,8 +53,10 @@ public class UpdatePersonHandler : IRequestHandler<UpdatePerson, UpdatePersonRes
             Id = person.Id,
             Name = person.Name,
             Success = success,
-            Message = success ? "Person successfully updated" :
-                                "Person updated failed..."
+            ResponseCode = success ? (int)HttpStatusCode.OK :
+                           (int)HttpStatusCode.InternalServerError,
+            Message = success ? "Person successfully updated in the system" :
+                                "System error, failed to update Person in the system.."
         };
     }
 }
