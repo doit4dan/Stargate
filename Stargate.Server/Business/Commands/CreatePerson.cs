@@ -2,8 +2,6 @@
 using MediatR;
 using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
-using Stargate.Server.Data;
-using Microsoft.EntityFrameworkCore;
 using Stargate.Server.Repositories;
 
 namespace Stargate.Server.Business.Commands
