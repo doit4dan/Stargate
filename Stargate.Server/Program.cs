@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Stargate.Server.Business.Commands;
 using Stargate.Server.Data;
+using Stargate.Server.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,11 +14,17 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<StargateContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("StarbaseApiDatabase")));
 
+builder.Services.AddScoped<IAstronautRepository, AstronautRepository>();
+builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+
 builder.Services.AddMediatR(cfg =>
 {
     cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+    cfg.AddRequestPreProcessor<CreatePersonPreProcessor>();
+    cfg.AddRequestPreProcessor<UpdatePersonPreProcessor>();
     cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly);
 });
+
 var app = builder.Build();
 
 app.UseDefaultFiles();
