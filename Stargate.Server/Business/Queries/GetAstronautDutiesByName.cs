@@ -29,7 +29,7 @@ namespace Stargate.Server.Business.Queries
 
             if (person is null)
             {
-                result.Message = $"Person not found with name: {request.Name}";
+                result.Message = "Person not found in the system, unable to retrieve astronaut duties";
                 result.ResponseCode = 404;
                 result.Success = false;
                 return result;
