@@ -25,7 +25,7 @@ public class PersonRepository : IPersonRepository
         return created > 0;
     }   
 
-    public async Task<IEnumerable<PersonAstronaut>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<PersonAstronaut>> GetPersonAstronautAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.PersonAstronauts
                 .FromSql($"""
@@ -35,7 +35,7 @@ public class PersonRepository : IPersonRepository
                 """).ToListAsync(cancellationToken);
     }
 
-    public async Task<PersonAstronaut?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<PersonAstronaut?> GetPersonAstronautByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         return await _context.PersonAstronauts
                 .FromSql($"""
@@ -44,6 +44,13 @@ public class PersonRepository : IPersonRepository
                     LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id
                     WHERE a.Name = {name}
                 """).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Person?> GetPersonByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await _context.People
+            .Where(x => x.Name == name)            
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<int> GetPersonIdByNameAsync(string name, CancellationToken cancellationToken = default)

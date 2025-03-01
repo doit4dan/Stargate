@@ -25,7 +25,7 @@ namespace Stargate.Server.Business.Queries
         {
             var result = new GetAstronautDutiesByNameResult();
 
-            var person = await _personRepository.GetByNameAsync(request.Name, cancellationToken);
+            var person = await _personRepository.GetPersonAstronautByNameAsync(request.Name, cancellationToken);
 
             if (person is null)
             {

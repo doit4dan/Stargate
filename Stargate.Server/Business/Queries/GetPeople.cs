@@ -21,7 +21,7 @@ namespace Stargate.Server.Business.Queries
         
         public async Task<GetPeopleResult> Handle(GetPeople request, CancellationToken cancellationToken)
         {
-            var ppl = await _personRepository.GetAllAsync(cancellationToken);
+            var ppl = await _personRepository.GetPersonAstronautAllAsync(cancellationToken);
             return new GetPeopleResult()
             {
                 People = ppl.ToList()
