@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Stargate.Server.Data.Models;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Stargate.Server.Data
 {
+    [ExcludeFromCodeCoverage]
     public class StargateContext : DbContext
     {
         public IDbConnection Connection => Database.GetDbConnection();
