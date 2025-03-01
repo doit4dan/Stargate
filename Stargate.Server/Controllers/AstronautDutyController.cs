@@ -17,14 +17,14 @@ namespace Stargate.Server.Controllers
         }
 
         [HttpGet("{name}")]
-        public async Task<IActionResult> GetAstronautDutiesByName(string name)
+        public async Task<IActionResult> GetAstronautDutiesByName(string name, CancellationToken cancellationToken)
         {
             try
             {
-                var result = await _mediator.Send(new GetPersonByName()
+                var result = await _mediator.Send(new GetAstronautDutiesByName()
                 {
                     Name = name
-                });
+                }, cancellationToken);
 
                 return this.GetResponse(result);
             }
@@ -40,10 +40,22 @@ namespace Stargate.Server.Controllers
         }
 
         [HttpPost("")]
-        public async Task<IActionResult> CreateAstronautDuty([FromBody] CreateAstronautDuty request)
+        public async Task<IActionResult> CreateAstronautDuty([FromBody] CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(request);
-            return this.GetResponse(result);
+            try
+            {
+                var result = await _mediator.Send(request, cancellationToken);
+                return this.GetResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return this.GetResponse(new BaseResponse()
+                {
+                    Message = ex.Message,
+                    Success = false,
+                    ResponseCode = (int)HttpStatusCode.InternalServerError
+                });
+            }
         }
     }
 }

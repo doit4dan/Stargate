@@ -22,7 +22,12 @@ namespace Stargate.Server.Business.Queries
         {
             var result = new GetPeopleResult();
 
-            var people = await _context.PersonAstronauts.FromSql($"SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate FROM [Person] a LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id").ToListAsync();
+            var people = await _context.PersonAstronauts
+                .FromSql($"""
+                    SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate 
+                    FROM [Person] a 
+                    LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id
+                """).ToListAsync(cancellationToken);                
 
             result.People = people;
 

@@ -17,14 +17,14 @@ namespace Stargate.Server.Controllers
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> GetPeople()
+        public async Task<IActionResult> GetPeople(CancellationToken cancellationToken)
         {
             try
             {
                 var result = await _mediator.Send(new GetPeople()
                 {
 
-                });
+                }, cancellationToken);
 
                 return this.GetResponse(result);
             }
@@ -40,14 +40,14 @@ namespace Stargate.Server.Controllers
         }
 
         [HttpGet("{name}")]
-        public async Task<IActionResult> GetPersonByName(string name)
+        public async Task<IActionResult> GetPersonByName(string name, CancellationToken cancellationToken)
         {
             try
             {
                 var result = await _mediator.Send(new GetPersonByName()
                 {
                     Name = name
-                });
+                }, cancellationToken);
 
                 return this.GetResponse(result);
             }
@@ -63,14 +63,14 @@ namespace Stargate.Server.Controllers
         }
 
         [HttpPost("")]
-        public async Task<IActionResult> CreatePerson([FromBody] string name)
+        public async Task<IActionResult> CreatePerson([FromBody] string name, CancellationToken cancellationToken)
         {
             try
             {
                 var result = await _mediator.Send(new CreatePerson()
                 {
                     Name = name
-                });
+                }, cancellationToken);
 
                 return this.GetResponse(result);
             }
@@ -83,7 +83,6 @@ namespace Stargate.Server.Controllers
                     ResponseCode = (int)HttpStatusCode.InternalServerError
                 });
             }
-
-        }
+        }        
     }
 }
