@@ -22,7 +22,7 @@ namespace Stargate.Server.Data
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(StargateContext).Assembly);
 
-            //SeedData(modelBuilder);
+            SeedData(modelBuilder);
 
             base.OnModelCreating(modelBuilder);
         }
@@ -35,12 +35,12 @@ namespace Stargate.Server.Data
                     new Person
                     {
                         Id = 1,
-                        Name = "John Doe"
+                        Name = "Neil Armstrong"
                     },
                     new Person
                     {
                         Id = 2,
-                        Name = "Jane Doe"
+                        Name = "Dan Carson"
                     }
                 );
 
