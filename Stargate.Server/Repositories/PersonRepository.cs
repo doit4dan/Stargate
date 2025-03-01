@@ -44,7 +44,24 @@ public class PersonRepository : IPersonRepository
                     LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id
                     WHERE a.Name = {name}
                 """).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<int> GetPersonIdByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await _context.People.AsNoTracking()
+            .Where(x => x.Name == name)
+            .Select(p => p.Id)
+            .FirstOrDefaultAsync(cancellationToken);            
     }    
+
+    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var person = (await _context.People.AsNoTracking()
+            .Where(x => x.Name == name)
+            .FirstOrDefaultAsync(cancellationToken));
+
+        return (person is not null);
+    }
 
     public async Task<bool> UpdateAsync(Person person, CancellationToken cancellationToken = default)
     {
@@ -59,25 +76,12 @@ public class PersonRepository : IPersonRepository
         return updated > 0;
     }
 
-    public Task<int> GetPersonIdByNameAsync(string name, CancellationToken cancellationToken = default)
-    {
-        return _context.People
-            .Where(x => x.Name == name)
-            .Select(p => p.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
-    {
-        return await GetPersonIdByNameAsync(name, cancellationToken) > 0;
-    }    
-
     private async Task<bool> ExistsByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var person = await _context.People
+        var person = await _context.People.AsNoTracking()
             .Where(x => x.Id == id)            
             .FirstOrDefaultAsync(cancellationToken);
 
         return (person != null);
-    }
+    }    
 }

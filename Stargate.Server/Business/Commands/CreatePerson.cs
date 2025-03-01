@@ -4,6 +4,7 @@ using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
 using Stargate.Server.Data;
 using Microsoft.EntityFrameworkCore;
+using Stargate.Server.Repositories;
 
 namespace Stargate.Server.Business.Commands
 {
@@ -14,28 +15,25 @@ namespace Stargate.Server.Business.Commands
 
     public class CreatePersonPreProcessor : IRequestPreProcessor<CreatePerson>
     {
-        private readonly StargateContext _context;
-        public CreatePersonPreProcessor(StargateContext context)
+        private readonly IPersonRepository _personRepository;
+        public CreatePersonPreProcessor(IPersonRepository personRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
         }
-        public Task Process(CreatePerson request, CancellationToken cancellationToken)
+        public async Task Process(CreatePerson request, CancellationToken cancellationToken)
         {
-            var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
-
-            if (person is not null) throw new BadHttpRequestException("Bad Request");
-
-            return Task.CompletedTask;
+            var personExists = await _personRepository.ExistsByNameAsync(request.Name, cancellationToken);
+            if (personExists) throw new BadHttpRequestException($"Person already exists with this name: {request.Name}");            
         }
     }
 
     public class CreatePersonHandler : IRequestHandler<CreatePerson, CreatePersonResult>
     {
-        private readonly StargateContext _context;
+        private readonly IPersonRepository _personRepository;
 
-        public CreatePersonHandler(StargateContext context)
+        public CreatePersonHandler(IPersonRepository personRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
         }
         public async Task<CreatePersonResult> Handle(CreatePerson request, CancellationToken cancellationToken)
         {
@@ -45,15 +43,13 @@ namespace Stargate.Server.Business.Commands
                 Name = request.Name
             };
 
-            await _context.People.AddAsync(newPerson);
-
-            await _context.SaveChangesAsync();
+            var success = await _personRepository.CreateAsync(newPerson);
 
             return new CreatePersonResult()
             {
-                Id = newPerson.Id
+                Id = newPerson.Id,
+                Success = success
             };
-
         }
     }
 
