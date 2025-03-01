@@ -3,6 +3,8 @@ using MediatR;
 using Stargate.Server.Data.Models;
 using Stargate.Server.Controllers;
 using Stargate.Server.Repositories;
+using FluentValidation;
+using Stargate.Server.Validators;
 
 namespace Stargate.Server.Business.Commands
 {
@@ -19,27 +21,16 @@ namespace Stargate.Server.Business.Commands
 
     public class CreateAstronautDutyPreProcessor : IRequestPreProcessor<CreateAstronautDuty>
     {
-        private readonly IPersonRepository _personRepository;
-        private readonly IAstronautRepository _astronautRepository;
+        private readonly IValidator<CreateAstronautDuty> _createAstronautDutyValidator;        
 
-        public CreateAstronautDutyPreProcessor(IPersonRepository personRepository, IAstronautRepository astronautRepository)
+        public CreateAstronautDutyPreProcessor(IValidator<CreateAstronautDuty> createAstronautDutyValidator)
         {
-            _personRepository = personRepository;
-            _astronautRepository = astronautRepository;
+            _createAstronautDutyValidator = createAstronautDutyValidator;
         }
 
         public async Task Process(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var personId = await _personRepository.GetPersonIdByNameAsync(request.Name, cancellationToken);
-
-            if (personId <= 0) throw new BadHttpRequestException($"Person does not exist with Name: {request.Name}");
-
-            var duties = await _astronautRepository.GetDutiesByPersonIdAsync(personId, cancellationToken);
-
-            var verifyNoPreviousDuty = duties
-                .FirstOrDefault(z => z.DutyTitle == request.DutyTitle && z.DutyStartDate == request.DutyStartDate);
-
-            if (verifyNoPreviousDuty is not null) throw new BadHttpRequestException("This duty record has already been recorded in the system..");            
+            await _createAstronautDutyValidator.ValidateAndThrowAsync(request);
         }
     }
 
