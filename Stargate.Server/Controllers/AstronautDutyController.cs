@@ -24,25 +24,13 @@ namespace Stargate.Server.Controllers
         /// <returns></returns>
         [HttpGet("{name}")]
         public async Task<IActionResult> GetAstronautDutiesByName(string name, CancellationToken cancellationToken)
-        {
-            try
+        {            
+            var result = await _mediator.Send(new GetAstronautDutiesByName()
             {
-                var result = await _mediator.Send(new GetAstronautDutiesByName()
-                {
-                    Name = name
-                }, cancellationToken);
+                Name = name
+            }, cancellationToken);
 
-                return this.GetResponse(result);
-            }
-            catch (Exception ex)
-            {
-                return this.GetResponse(new BaseResponse()
-                {
-                    Message = ex.Message,
-                    Success = false,
-                    ResponseCode = (int)HttpStatusCode.InternalServerError
-                });
-            }
+            return this.GetResponse(result);            
         }
 
         /// <summary>
@@ -53,21 +41,9 @@ namespace Stargate.Server.Controllers
         /// <returns></returns>
         [HttpPost("")]
         public async Task<IActionResult> CreateAstronautDuty([FromBody] CreateAstronautDuty request, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var result = await _mediator.Send(request, cancellationToken);
-                return this.GetResponse(result);
-            }
-            catch (Exception ex)
-            {
-                return this.GetResponse(new BaseResponse()
-                {
-                    Message = ex.Message,
-                    Success = false,
-                    ResponseCode = (int)HttpStatusCode.InternalServerError
-                });
-            }
+        {            
+            var result = await _mediator.Send(request, cancellationToken);
+            return this.GetResponse(result);            
         }
     }
 }

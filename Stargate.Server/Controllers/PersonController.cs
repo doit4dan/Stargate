@@ -23,25 +23,13 @@ namespace Stargate.Server.Controllers
         /// <returns></returns>
         [HttpGet("")]
         public async Task<IActionResult> GetPeople(CancellationToken cancellationToken)
-        {
-            try
+        {           
+            var result = await _mediator.Send(new GetPeople()
             {
-                var result = await _mediator.Send(new GetPeople()
-                {
 
-                }, cancellationToken);
+            }, cancellationToken);
 
-                return this.GetResponse(result);
-            }
-            catch (Exception ex)
-            {
-                return this.GetResponse(new BaseResponse()
-                {
-                    Message = ex.Message,
-                    Success = false,
-                    ResponseCode = (int)HttpStatusCode.InternalServerError
-                });
-            }
+            return this.GetResponse(result);                        
         }
 
         /// <summary>
@@ -52,25 +40,13 @@ namespace Stargate.Server.Controllers
         /// <returns></returns>
         [HttpGet("{name}")]
         public async Task<IActionResult> GetPersonByName(string name, CancellationToken cancellationToken)
-        {
-            try
+        {            
+            var result = await _mediator.Send(new GetPersonByName()
             {
-                var result = await _mediator.Send(new GetPersonByName()
-                {
-                    Name = name
-                }, cancellationToken);
+                Name = name
+            }, cancellationToken);
 
-                return this.GetResponse(result);
-            }
-            catch (Exception ex)
-            {
-                return this.GetResponse(new BaseResponse()
-                {
-                    Message = ex.Message,
-                    Success = false,
-                    ResponseCode = (int)HttpStatusCode.InternalServerError
-                });
-            }
+            return this.GetResponse(result);            
         }
 
         /// <summary>
@@ -81,25 +57,13 @@ namespace Stargate.Server.Controllers
         /// <returns></returns>
         [HttpPost("")]
         public async Task<IActionResult> CreatePerson([FromBody] string name, CancellationToken cancellationToken)
-        {
-            try
+        {            
+            var result = await _mediator.Send(new CreatePerson()
             {
-                var result = await _mediator.Send(new CreatePerson()
-                {
-                    Name = name
-                }, cancellationToken);
+                Name = name
+            }, cancellationToken);
 
-                return this.GetResponse(result);
-            }
-            catch (Exception ex)
-            {
-                return this.GetResponse(new BaseResponse()
-                {
-                    Message = ex.Message,
-                    Success = false,
-                    ResponseCode = (int)HttpStatusCode.InternalServerError
-                });
-            }
+            return this.GetResponse(result);            
         }
 
         /// <summary>
@@ -112,25 +76,13 @@ namespace Stargate.Server.Controllers
         [HttpPut("{name}")]
         public async Task<IActionResult> UpdatePersonByName(string name, [FromBody] string newName, CancellationToken cancellationToken)
         {
-            try
+            var result = await _mediator.Send(new UpdatePerson()
             {
-                var result = await _mediator.Send(new UpdatePerson()
-                {
-                    Name = name,
-                    NewName = newName
-                }, cancellationToken);
+                Name = name,
+                NewName = newName
+            }, cancellationToken);
 
-                return this.GetResponse(result);
-            }
-            catch (Exception ex)
-            {
-                return this.GetResponse(new BaseResponse()
-                {
-                    Message = ex.Message,
-                    Success = false,
-                    ResponseCode = (int)HttpStatusCode.InternalServerError
-                });
-            }
+            return this.GetResponse(result);            
         }
     }
 }

@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Stargate.Server.Business.Commands;
 using Stargate.Server.Data;
 using Stargate.Server.Repositories;
+using FluentValidation;
+using Stargate.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,7 @@ builder.Services.AddDbContext<StargateContext>(options =>
 
 builder.Services.AddScoped<IAstronautRepository, AstronautRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddMediatR(cfg =>
 {
@@ -41,6 +44,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.MapControllers();
 
 app.MapFallbackToFile("/index.html");

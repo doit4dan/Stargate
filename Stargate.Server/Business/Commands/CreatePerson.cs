@@ -3,6 +3,7 @@ using MediatR;
 using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
 using Stargate.Server.Repositories;
+using FluentValidation;
 
 namespace Stargate.Server.Business.Commands
 {
@@ -13,15 +14,14 @@ namespace Stargate.Server.Business.Commands
 
     public class CreatePersonPreProcessor : IRequestPreProcessor<CreatePerson>
     {
-        private readonly IPersonRepository _personRepository;
-        public CreatePersonPreProcessor(IPersonRepository personRepository)
+        private readonly IValidator<CreatePerson> _createPersonValidator;
+        public CreatePersonPreProcessor(IValidator<CreatePerson> createPersonValidator)
         {
-            _personRepository = personRepository;
+            _createPersonValidator = createPersonValidator;
         }
         public async Task Process(CreatePerson request, CancellationToken cancellationToken)
         {
-            var personExists = await _personRepository.ExistsByNameAsync(request.Name, cancellationToken);
-            if (personExists) throw new BadHttpRequestException($"Person already exists with this name: {request.Name}");            
+            await _createPersonValidator.ValidateAndThrowAsync(request);      
         }
     }
 
