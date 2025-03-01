@@ -4,6 +4,7 @@ using Stargate.Server.Controllers;
 using Stargate.Server.Data.Models;
 using Stargate.Server.Repositories;
 using FluentValidation;
+using System.Net;
 
 namespace Stargate.Server.Business.Commands
 {
@@ -46,7 +47,11 @@ namespace Stargate.Server.Business.Commands
             return new CreatePersonResult()
             {
                 Id = newPerson.Id,
-                Success = success
+                Success = success,
+                Message = success ? "Person successfully saved in the system" :
+                          "Error occured when attempting to save person in system..",
+                ResponseCode = success ? (int)HttpStatusCode.OK :
+                               (int)HttpStatusCode.InternalServerError
             };
         }
     }
