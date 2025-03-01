@@ -5,7 +5,9 @@
 
 ## Astronaut Career Tracking System (ACTS)
 
-ACTS is used as a tool to maintain a record of all the People that have served as Astronauts. When serving as an Astronaut, your *Job* (Duty) is tracked by your Rank, Title and the Start and End Dates of the Duty.
+ACTS is used as a tool to maintain a record of all the People that have served as Astronauts. 
+
+When serving as an Astronaut, your *Job* (Duty) is tracked by your Rank, Title and the Start and End Dates of the Duty.
 
 The People that exist in this system are not all Astronauts. ACTS maintains a master list of People and Duties that are updated from an external service (not controlled by ACTS). The update schedule is determined by the external service.
 

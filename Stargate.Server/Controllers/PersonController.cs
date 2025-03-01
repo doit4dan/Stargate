@@ -100,6 +100,37 @@ namespace Stargate.Server.Controllers
                     ResponseCode = (int)HttpStatusCode.InternalServerError
                 });
             }
-        }        
+        }
+
+        /// <summary>
+        /// Updates Person by Full Name
+        /// </summary>
+        /// <param name="name">Current Full Name, passed in URI</param>
+        /// <param name="newName">New Full Name, passed in body</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [HttpPut("{name}")]
+        public async Task<IActionResult> UpdatePersonByName(string name, [FromBody] string newName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _mediator.Send(new UpdatePerson()
+                {
+                    Name = name,
+                    NewName = newName
+                }, cancellationToken);
+
+                return this.GetResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return this.GetResponse(new BaseResponse()
+                {
+                    Message = ex.Message,
+                    Success = false,
+                    ResponseCode = (int)HttpStatusCode.InternalServerError
+                });
+            }
+        }
     }
 }
