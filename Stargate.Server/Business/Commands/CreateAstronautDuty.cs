@@ -5,6 +5,7 @@ using Stargate.Server.Controllers;
 using Stargate.Server.Repositories;
 using FluentValidation;
 using Stargate.Server.Validators;
+using System.Net;
 
 namespace Stargate.Server.Business.Commands
 {
@@ -64,7 +65,7 @@ namespace Stargate.Server.Business.Commands
                 astronautDetail.CareerStartDate = request.DutyStartDate.Date;
                 if (request.DutyTitle == "RETIRED")
                 {
-                    astronautDetail.CareerEndDate = request.DutyStartDate.Date;
+                    astronautDetail.CareerEndDate = request.DutyStartDate.AddDays(-1).Date;
                 }
 
                 success = await _astronautRepository.CreateDetailAsync(astronautDetail, cancellationToken);
@@ -98,7 +99,9 @@ namespace Stargate.Server.Business.Commands
                 Id = newAstronautDuty.Id,
                 Success = success,
                 Message = success ? "Successfully recorded Astronaut Duty Details in system" :
-                                    "Failed to record Astronaut Duty Details in system..."
+                                    "Failed to record Astronaut Duty Details in system...",
+                ResponseCode = success ? (int)HttpStatusCode.OK :
+                               (int)HttpStatusCode.InternalServerError
             };
         }
     }
