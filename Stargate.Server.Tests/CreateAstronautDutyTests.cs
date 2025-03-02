@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Stargate.Server.Business.Commands;
 using Stargate.Server.Business.Queries;
 using Stargate.Server.Data.Models;
 using Stargate.Server.Repositories;
+using Stargate.Server.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -651,4 +653,275 @@ public class CreateAstronautDutyTests
         response.ResponseCode.Should().Be((int)HttpStatusCode.InternalServerError);
         response.Message.Should().Be("Failed to record Astronaut Duty Details in system...");
     }
+
+    [Fact]
+    public async Task CreateAstronautDuty_ThrowsValidationException_WhenPersonNameIsEmpty()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "";        
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();        
+        var mockedAstronautRepo = new Mock<IAstronautRepository>();        
+
+        var serviceProvider = services
+            .AddMediatR(cfg => {
+                cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreateAstronautDutyHandler).Assembly);                
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddScoped<IAstronautRepository>(x => mockedAstronautRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreateAstronautDutyValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var request = new CreateAstronautDuty
+        {
+            Name = name,
+            Rank = "2LT",
+            DutyTitle = "Commander",
+            DutyStartDate = new DateTime(2025, 3, 1)
+        };
+
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateAstronautDuty_ThrowsValidationException_WhenPersonDoesNotExist()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        var mockedAstronautRepo = new Mock<IAstronautRepository>();
+
+        var serviceProvider = services
+            .AddMediatR(cfg => {
+                cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreateAstronautDutyHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddScoped<IAstronautRepository>(x => mockedAstronautRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreateAstronautDutyValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var request = new CreateAstronautDuty
+        {
+            Name = name,
+            Rank = "2LT",
+            DutyTitle = "Commander",
+            DutyStartDate = new DateTime(2025, 3, 1)
+        };
+
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaa")]
+    [InlineData(" ")]
+    [InlineData("!#$!@")]
+    public async Task CreateAstronautDuty_ThrowsValidationException_WhenInvalidRank(string rank)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        mockedPersonRepo.Setup(m => m.ExistsByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+        var mockedAstronautRepo = new Mock<IAstronautRepository>();
+
+        var serviceProvider = services
+            .AddMediatR(cfg => {
+                cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreateAstronautDutyHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddScoped<IAstronautRepository>(x => mockedAstronautRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreateAstronautDutyValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var request = new CreateAstronautDuty
+        {
+            Name = name,
+            Rank = rank,
+            DutyTitle = "Commander",
+            DutyStartDate = new DateTime(2025, 3, 1)
+        };
+
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+        catch (Exception ex)
+        {
+            // ignore other exceptions, I am focusing testing Validation piece
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]    
+    [InlineData("!#$!@")]
+    public async Task CreateAstronautDuty_ThrowsValidationException_WhenInvalidDutyTitle(string dutyTitle)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        mockedPersonRepo.Setup(m => m.ExistsByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+        var mockedAstronautRepo = new Mock<IAstronautRepository>();
+
+        var serviceProvider = services
+            .AddMediatR(cfg => {
+                cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreateAstronautDutyHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddScoped<IAstronautRepository>(x => mockedAstronautRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreateAstronautDutyValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var request = new CreateAstronautDuty
+        {
+            Name = name,
+            Rank = "2LT",
+            DutyTitle = dutyTitle,
+            DutyStartDate = new DateTime(2025, 3, 1)
+        };
+
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+        catch (Exception ex)
+        {
+            // ignore other exceptions, I am focusing testing Validation piece
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateAstronautDuty_ThrowsValidationException_WhenExistingDutyExists()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+        var personId = 1;
+        var dutyTitle = "Commander";
+        var rank = "2LT";
+        var dutyStartDate = new DateTime(2025, 3, 1);
+
+        var existingDuties = new List<AstronautDuty>()
+        {
+            new AstronautDuty
+            {
+                Id = 1,
+                PersonId = personId,
+                Rank = rank,
+                DutyTitle = dutyTitle,
+                DutyStartDate = dutyStartDate
+            }
+        };
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        mockedPersonRepo.Setup(m => m.ExistsByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+        mockedPersonRepo.Setup(m => m.GetPersonIdByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(personId));
+        var mockedAstronautRepo = new Mock<IAstronautRepository>();
+        mockedAstronautRepo.Setup(m => m.GetDutiesByPersonIdAsync(personId, It.IsAny<CancellationToken>())).Returns(Task.FromResult(existingDuties.AsEnumerable()));
+
+        var serviceProvider = services
+            .AddMediatR(cfg => {
+                cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreateAstronautDutyHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddScoped<IAstronautRepository>(x => mockedAstronautRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreateAstronautDutyValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var request = new CreateAstronautDuty
+        {
+            Name = name,
+            Rank = rank,
+            DutyTitle = dutyTitle,
+            DutyStartDate = dutyStartDate
+        };
+
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+        catch (Exception ex)
+        {
+            // ignore other exceptions, I am focusing testing Validation piece
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
+    }
+
 }
