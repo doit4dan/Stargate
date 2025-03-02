@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Stargate.Server.Data.Models
 {
     [Keyless]
+    [ExcludeFromCodeCoverage]
     public class PersonAstronaut
     {
         public int PersonId { get; set; }

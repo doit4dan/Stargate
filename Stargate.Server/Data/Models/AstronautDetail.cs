@@ -2,10 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Stargate.Server.Data.Models
 {
     [Table("AstronautDetail")]
+    [ExcludeFromCodeCoverage]
     public class AstronautDetail
     {
         public int Id { get; set; }

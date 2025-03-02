@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Stargate.Server.Data.Models
 {
     [Table("AstronautDuty")]
+    [ExcludeFromCodeCoverage]
     public class AstronautDuty
     {
         public int Id { get; set; }
