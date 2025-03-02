@@ -35,7 +35,19 @@ public class ExceptionHandlingMiddleware
             };
 
             await context.Response.WriteAsJsonAsync(validationFailureResponse);
-        } // Pass Internal Server Error for Remaining Errors ( Do not inform user of internal system details, e.g. Stack Trace )
+        } 
+        catch (BadHttpRequestException ex)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+            await context.Response.WriteAsJsonAsync(new BaseResponse()
+            {
+                Message = ex.Message,
+                Success = false,
+                ResponseCode = (int)HttpStatusCode.BadRequest
+            });
+        }
+        // Pass Internal Server Error for Remaining Errors ( Do not inform user of internal system details, e.g. Stack Trace )
         catch (Exception ex)
         {
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
