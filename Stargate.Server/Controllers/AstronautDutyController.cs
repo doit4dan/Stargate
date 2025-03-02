@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Stargate.Server.Business.Commands;
 using Stargate.Server.Business.Queries;
 using System.Net;
+using System.Text.Json;
 
 namespace Stargate.Server.Controllers
 {
@@ -11,9 +12,11 @@ namespace Stargate.Server.Controllers
     public class AstronautDutyController : ControllerBase
     {
         private readonly IMediator _mediator;
-        public AstronautDutyController(IMediator mediator)
+        private readonly ILogger<AstronautDutyController> _logger;
+        public AstronautDutyController(IMediator mediator, ILogger<AstronautDutyController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         /// <summary>
@@ -28,8 +31,8 @@ namespace Stargate.Server.Controllers
             var result = await _mediator.Send(new GetAstronautDutiesByName()
             {
                 Name = name
-            }, cancellationToken);
-
+            }, cancellationToken);            
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return this.GetResponse(result);            
         }
 
@@ -43,7 +46,8 @@ namespace Stargate.Server.Controllers
         public async Task<IActionResult> CreateAstronautDuty([FromBody] CreateAstronautDuty request, CancellationToken cancellationToken)
         {            
             var result = await _mediator.Send(request, cancellationToken);
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return this.GetResponse(result);            
-        }
+        }                
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Stargate.Server.Business.Commands;
 using Stargate.Server.Business.Queries;
 using System.Net;
+using System.Text.Json;
 
 namespace Stargate.Server.Controllers
 {
@@ -11,9 +12,11 @@ namespace Stargate.Server.Controllers
     public class PersonController : ControllerBase
     {
         private readonly IMediator _mediator;
-        public PersonController(IMediator mediator)
+        private readonly ILogger<PersonController> _logger;
+        public PersonController(IMediator mediator, ILogger<PersonController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         /// <summary>
@@ -28,7 +31,7 @@ namespace Stargate.Server.Controllers
             {
 
             }, cancellationToken);
-
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return this.GetResponse(result);                        
         }
 
@@ -45,7 +48,7 @@ namespace Stargate.Server.Controllers
             {
                 Name = name
             }, cancellationToken);
-
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return this.GetResponse(result);            
         }
 
@@ -62,7 +65,7 @@ namespace Stargate.Server.Controllers
             {
                 Name = name
             }, cancellationToken);
-
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return this.GetResponse(result);            
         }
 
@@ -81,7 +84,7 @@ namespace Stargate.Server.Controllers
                 Name = name,
                 NewName = newName
             }, cancellationToken);
-
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return this.GetResponse(result);            
         }
     }
