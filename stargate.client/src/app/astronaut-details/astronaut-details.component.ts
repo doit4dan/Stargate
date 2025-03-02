@@ -7,28 +7,46 @@ import { CommonModule } from '@angular/common';
   selector: 'app-astronaut-details',
   template: `
     <article>
-      <img class="listing-photo" src="/assets/astronaut-9988.svg"
+      <img class="astronaut-photo" src="/assets/astronaut-9988.svg"
         alt="Photo of {{astronaut?.name}}"/>
-      <section class="listing-description">
-        <h2 class="listing-heading">{{astronaut?.name}}</h2>        
-        <p class="listing-location">Classification: {{astronaut?.careerStartDate === null ? "Civilian" : "Astronaut"}}</p>
-      </section>      
-      @for (item of astronautDuties; track item.id) {
-        <section class="listing-features">
-          @if(item.dutyEndDate === null)
-          {
-            <h2 class="section-heading">{{item?.dutyTitle }}, {{ item?.rank}} (Current)</h2>
-          } @else {
-            <h2 class="section-heading">{{item?.dutyTitle }}, {{ item?.rank}}</h2>
-          }            
-          <ul>
-            <li>Rank: {{ item?.rank}}</li>
-            <li>Duty Title: {{item?.dutyTitle }}</li>
-            <li>Career Start: {{item?.dutyStartDate }}</li>
-            <li>Career End: {{item?.dutyEndDate }}</li>
-          </ul>
-        </section>
-      }      
+      <section class="description-section">
+        <h2 class="astronaut-heading">{{astronaut?.name}}</h2>        
+        @if(astronaut?.careerEndDate === null)
+        {
+          <p class="description-text">
+            {{astronaut?.name}} is classified as an Astronaut in the Stargate system. 
+            This person is currently serving in the {{astronaut?.currentDutyTitle}} role with
+            a rank of {{astronaut?.currentRank}}. They started their career as an astronaut
+            on {{astronaut?.careerStartDate | date:'MMMM, dd, yyyy'}}. Please see their full career history below.
+          </p>     
+        } @else {
+          <p class="description-text">
+            {{astronaut?.name}} is classified as an Retired Astronaut in the Stargate system. 
+            They started their career as an astronaut
+            on {{astronaut?.careerStartDate | date:'MMMM, dd, yyyy'}} and ended their career on {{astronaut?.careerEndDate | date:'MMMM, dd, yyyy'}}. 
+            They retired with a rank of {{astronaut?.currentRank}}. Please see their full career history below.
+          </p> 
+        }          
+      </section>            
+      <section>       
+       <h2 class="section-heading">Duty History</h2>     
+        <table class="duty-table">
+          <tr>
+            <th>Rank</th>
+            <th>Duty Title</th>
+            <th>Duty Start</th>
+            <th>Duty End</th>
+          </tr>
+          @for (item of astronautDuties; track item.id) {
+            <tr>
+              <td>{{ item?.rank}}</td>
+              <td>{{item?.dutyTitle }}</td>
+              <td>{{item?.dutyStartDate | date:'MM.dd.yyyy'}}</td>
+              <td>{{item?.dutyEndDate | date:'MM.dd.yyyy'}}</td>
+            </tr>
+          }
+        </table>       
+      </section>           
     </article>
   `,
   styleUrl: './astronaut-details.component.css'

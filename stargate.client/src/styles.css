@@ -8,9 +8,9 @@
     font-family: 'Be Vietnam Pro', sans-serif;
   }
   :root {
-    --primary-color: #605DC8;
-    --secondary-color: #8B89E6;
-    --accent-color: #e8e7fa;
+    --primary-color: #8a0202; /* #605DC8 */
+    --secondary-color: #aa501c; /* 8B89E6 */
+    --accent-color: #e2e2e2; /* e8e7fa a2c9e2 */
     --shadow-color: #E8E8E8;
   }
   
