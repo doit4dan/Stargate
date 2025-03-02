@@ -4,11 +4,22 @@ using Stargate.Server.Data;
 using Stargate.Server.Repositories;
 using FluentValidation;
 using Stargate.Server.Middleware;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
 
+builder.Logging.AddSerilog(logger);
+
+// Use this to override ( this will leave you with only Serilog )
+//builder.Host.UseSerilog(((context, configuration) =>
+//{
+//    configuration.ReadFrom.Configuration(context.Configuration);
+//}));
+        
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
