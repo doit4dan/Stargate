@@ -33,6 +33,13 @@ public class CreateAstronautDutyValidator : AbstractValidator<CreateAstronautDut
             .Matches(new Regex("[A-Za-z0-9 ]")) // allow a-z, numbers and spaces
             .WithMessage("DutyTitle may only comprise of alphabetical letters, numbers and spaces");
 
+        RuleFor(x => new { x.Name, x.DutyStartDate })
+            .MustAsync(async (x, cancellation) =>
+            {
+                return await ValidateDutyStartDateAsync(x.Name, x.DutyStartDate); // see if we should be checking rank as well
+            })
+            .WithMessage("You can only add new duty records greater than the max duty start date of existing records");
+
         RuleFor(x => new { x.Name, x.DutyTitle, x.DutyStartDate })
             .MustAsync(async (x, cancellation) =>
             {
@@ -54,5 +61,17 @@ public class CreateAstronautDutyValidator : AbstractValidator<CreateAstronautDut
             .FirstOrDefault(z => z.DutyTitle == dutyTitle && z.DutyStartDate == dutyStartDate);
 
         return (verifyNoPreviousDuty is null);
+    }
+
+    private async Task<bool> ValidateDutyStartDateAsync(string name, DateTime dutyStartDate)
+    {
+        var personId = await _personRepository.GetPersonIdByNameAsync(name);
+        var duties = await _astronautRepository.GetDutiesByPersonIdAsync(personId);
+
+        // get max duty start greater than the one we are attempting to add
+        var getMaxDutyStartDate = duties
+            .FirstOrDefault(z => z.DutyStartDate > dutyStartDate);
+
+        return (getMaxDutyStartDate is null);
     }
 }

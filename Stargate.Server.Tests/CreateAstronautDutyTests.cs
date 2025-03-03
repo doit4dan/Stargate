@@ -924,4 +924,73 @@ public class CreateAstronautDutyTests
         validationException.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task CreateAstronautDuty_ThrowsValidationException_WhenAddingDutyWithInvalidStartDate()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var name = "Dan Carson";
+        var personId = 1;
+        var dutyTitle = "Commander";
+        var rank = "2LT";
+        var dutyStartDate = new DateTime(2025, 3, 1);
+
+        var existingDuties = new List<AstronautDuty>()
+        {
+            new AstronautDuty
+            {
+                Id = 1,
+                PersonId = personId,
+                Rank = rank,
+                DutyTitle = dutyTitle,
+                DutyStartDate = dutyStartDate
+            }
+        };
+
+        var mockedPersonRepo = new Mock<IPersonRepository>();
+        mockedPersonRepo.Setup(m => m.ExistsByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+        mockedPersonRepo.Setup(m => m.GetPersonIdByNameAsync(name, It.IsAny<CancellationToken>())).Returns(Task.FromResult(personId));
+        var mockedAstronautRepo = new Mock<IAstronautRepository>();
+        mockedAstronautRepo.Setup(m => m.GetDutiesByPersonIdAsync(personId, It.IsAny<CancellationToken>())).Returns(Task.FromResult(existingDuties.AsEnumerable()));
+
+        var serviceProvider = services
+            .AddMediatR(cfg => {
+                cfg.AddRequestPreProcessor<CreateAstronautDutyPreProcessor>();
+                cfg.RegisterServicesFromAssemblies(typeof(CreateAstronautDutyHandler).Assembly);
+            })
+            .AddScoped<IPersonRepository>(x => mockedPersonRepo.Object)
+            .AddScoped<IAstronautRepository>(x => mockedAstronautRepo.Object)
+            .AddValidatorsFromAssemblyContaining<CreateAstronautDutyValidator>()
+            .BuildServiceProvider();
+
+        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var request = new CreateAstronautDuty
+        {
+            Name = name,
+            Rank = rank,
+            DutyTitle = dutyTitle,
+            DutyStartDate = dutyStartDate.AddMonths(-1)
+        };
+
+        ValidationException? validationException = null;
+
+        // Act
+        try
+        {
+            var response = await mediator.Send(request);
+        }
+        catch (ValidationException ex)
+        {
+            validationException = ex;
+        }
+        catch (Exception ex)
+        {
+            // ignore other exceptions, I am focusing testing Validation piece
+        }
+
+        // Assert
+        validationException.Should().NotBeNull();
+    }
+
 }
